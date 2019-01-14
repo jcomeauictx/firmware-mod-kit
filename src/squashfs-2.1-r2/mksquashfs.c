@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -259,7 +260,6 @@ void sighandler()
 	}
 }
 
-
 unsigned int mangle(char *d, char *s, int size, int block_size, int uncompressed, int data_block)
 {
 	unsigned long c_byte = block_size << 1;
@@ -283,6 +283,15 @@ unsigned int mangle(char *d, char *s, int size, int block_size, int uncompressed
 	return (unsigned int) c_byte;
 }
 
+unsigned int mangle2(char *d, char *s, int size, int block_size, int uncompressed, int data_block)
+{
+	char zipheader[] = "7zip";
+	d = memcpy(d, &zipheader, sizeof(zipheader) - 1);
+	d += sizeof(zipheader) - 1;
+	return mangle(d, s, size, block_size, uncompressed, data_block);
+}
+
+unsigned int (*morph)(char *, char *, int, int, int, int) = &mangle;
 
 squashfs_base_inode_header *get_inode(int req_size)
 {
@@ -298,7 +307,7 @@ squashfs_base_inode_header *get_inode(int req_size)
 			inode_size += (SQUASHFS_METADATA_SIZE << 1) + 2;
 		}
 
-		c_byte = mangle(inode_table + inode_bytes + block_offset, data_cache,
+		c_byte = (*morph)(inode_table + inode_bytes + block_offset, data_cache,
 								SQUASHFS_METADATA_SIZE, SQUASHFS_METADATA_SIZE, noI, 0);
 		TRACE("Inode block @ %x, size %d\n", inode_bytes, c_byte);
 		if(!swap)
@@ -382,7 +391,7 @@ unsigned int write_inodes()
 			inode_size += (SQUASHFS_METADATA_SIZE << 1) + 2;
 		}
 		avail_bytes = cache_bytes > SQUASHFS_METADATA_SIZE ? SQUASHFS_METADATA_SIZE : cache_bytes;
-		c_byte = mangle(inode_table + inode_bytes + block_offset, datap, avail_bytes, SQUASHFS_METADATA_SIZE, noI, 0);
+		c_byte = (*morph)(inode_table + inode_bytes + block_offset, datap, avail_bytes, SQUASHFS_METADATA_SIZE, noI, 0);
 		TRACE("Inode block @ %x, size %d\n", inode_bytes, c_byte);
 		if(!swap)
 			memcpy(inode_table + inode_bytes, &c_byte, sizeof(unsigned short));
@@ -419,7 +428,7 @@ unsigned int write_directories()
 			directory_size += (SQUASHFS_METADATA_SIZE << 1) + 2;
 		}
 		avail_bytes = directory_cache_bytes > SQUASHFS_METADATA_SIZE ? SQUASHFS_METADATA_SIZE : directory_cache_bytes;
-		c_byte = mangle(directory_table + directory_bytes + block_offset, directoryp, avail_bytes, SQUASHFS_METADATA_SIZE, noI, 0);
+		c_byte = (*morph)(directory_table + directory_bytes + block_offset, directoryp, avail_bytes, SQUASHFS_METADATA_SIZE, noI, 0);
 		TRACE("Directory block @ %x, size %d\n", directory_bytes, c_byte);
 		if(!swap)
 			memcpy(directory_table + directory_bytes, &c_byte, sizeof(unsigned short));
@@ -765,7 +774,7 @@ int write_dir(squashfs_inode *inode, char *filename, struct directory *dir)
 			directory_size += SQUASHFS_METADATA_SIZE << 1;
 		}
 
-		c_byte = mangle(directory_table + directory_bytes + block_offset, directory_data_cache,
+		c_byte = (*morph)(directory_table + directory_bytes + block_offset, directory_data_cache,
 				SQUASHFS_METADATA_SIZE, SQUASHFS_METADATA_SIZE, noI, 0);
 		TRACE("Directory block @ %x, size %d\n", directory_bytes, c_byte);
 		if(!swap)
@@ -863,7 +872,7 @@ void write_fragment()
 	if(fragments % FRAG_SIZE == 0)
 		if((fragment_table = (squashfs_fragment_entry *) realloc(fragment_table, (fragments + FRAG_SIZE) * sizeof(squashfs_fragment_entry))) == NULL)
 			BAD_ERROR("Out of memory in fragment table\n");
-	fragment_table[fragments].size = mangle(buffer, fragment_data, fragment_size, block_size, noF, 1);
+	fragment_table[fragments].size = (*morph)(buffer, fragment_data, fragment_size, block_size, noF, 1);
 	fragment_table[fragments].start_block = bytes;
 	compressed_size = SQUASHFS_COMPRESSED_SIZE_BLOCK(fragment_table[fragments].size);
 	write_bytes(fd, bytes, compressed_size, buffer);
@@ -921,7 +930,7 @@ unsigned int write_fragment_table()
 
 	for(i = 0; i < meta_blocks; i++) {
 		int avail_bytes = i == meta_blocks - 1 ? frag_bytes % SQUASHFS_METADATA_SIZE : SQUASHFS_METADATA_SIZE;
-		c_byte = mangle(cbuffer + block_offset, buffer + i * SQUASHFS_METADATA_SIZE , avail_bytes, SQUASHFS_METADATA_SIZE, noF, 0);
+		c_byte = (*morph)(cbuffer + block_offset, buffer + i * SQUASHFS_METADATA_SIZE , avail_bytes, SQUASHFS_METADATA_SIZE, noF, 0);
 		if(!swap)
 			memcpy(cbuffer, &c_byte, sizeof(unsigned short));
 		else
@@ -1139,7 +1148,7 @@ int write_file(squashfs_inode *inode, char *filename, long long size, int *dupli
 			int available_bytes = read_size - (block * block_size) > block_size ? block_size : read_size - (block * block_size);
 			if(read(file, buff, available_bytes) == -1)
 				goto read_err;
-			c_byte = mangle(c_buffer + bbytes, buff, available_bytes, block_size, noD, 1);
+			c_byte = (*morph)(c_buffer + bbytes, buff, available_bytes, block_size, noD, 1);
 			block_list[block ++] = c_byte;
 			bbytes += SQUASHFS_COMPRESSED_SIZE_BLOCK(c_byte);
 		}
@@ -1635,7 +1644,11 @@ int main(int argc, char *argv[])
 		else if(strcmp(argv[i], "-no-duplicates") == 0)
 			duplicate_checking = FALSE;
 
-		else if(strcmp(argv[i], "-no-fragments") == 0)
+		else if(strcmp(argv[i], "-7zip") == 0) {
+			fprintf(stderr, "Adding 7zip headers to compressed segments\n");
+			morph = &mangle2;
+
+		 } else if(strcmp(argv[i], "-no-fragments") == 0)
 			no_fragments = TRUE;
 
 		 else if(strcmp(argv[i], "-always-use-fragments") == 0)
@@ -1741,6 +1754,7 @@ printOptions:
 			ERROR("-info\t\t\tprint files written to filesystem\n");
 			ERROR("-b <block_size>\t\tset data block to <block_size>.  Default %d bytes\n", SQUASHFS_FILE_SIZE);
 			ERROR("-2.0\t\t\tcreate a 2.0 filesystem\n");
+			ERROR("-7zip\t\t\tadd 7zip headers\n");
 			ERROR("-noI\t\t\tdo not compress inode table\n");
 			ERROR("-noD\t\t\tdo not compress data blocks\n");
 			ERROR("-noF\t\t\tdo not compress fragment blocks\n");
@@ -1890,7 +1904,7 @@ printOptions:
 
 		printf("Appending to existing %s %d.%d filesystem on %s, block size %d\n", be ? "big endian" :
 			"little endian", SQUASHFS_MAJOR, filesystem_minor_version, argv[source + 1], block_size);
-		printf("All -be, -le, -b, -noI, -noD, -noF, -check_data, no-duplicates, no-fragments, -always-use-fragments and -2.0 options ignored\n");
+		printf("All -be, -le, -b, -noI, -noD, -noF, -check_data, no-duplicates, no-fragments, -always-use-fragments, -2.0 and -7zip options ignored\n");
 		printf("\nIf appending is not wanted, please re-run with -noappend specified!\n\n");
 
 		compressed_data = inode_dir_offset + (inode_dir_file_size & ~(SQUASHFS_METADATA_SIZE - 1));
