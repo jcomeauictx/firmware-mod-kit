@@ -21,6 +21,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <unistd.h>

@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <sys/wait.h>
 
 #include "pseudo.h"

@@ -70,6 +70,7 @@
 #include <endian.h>
 #include <byteswap.h>
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 
 // always flip, regardless of endianness of machine
 u_int32_t flip_endian(u_int32_t nValue)

@@ -70,6 +70,16 @@ case $FS_TYPE in
 		if [ "$(echo $MKFS | grep 'squashfs-4.0-realtek')" != "" ] && [ "$FS_COMPRESSION" == "lzma" ]
 		then
 			COMP="-comp lzma"
+			# if version is 2.0, don't let it build 2.1
+			if [ "$FS_VERSION" = "2.0" ]; then
+				COMP="$COMP -2.0"
+			fi
+			# add 7zip headers if specified
+			if [ "$COMPRESSION_HEADER" = "7zip" ]; then
+				COMP="$COMP -7zip"
+			elif [ "$COMPRESSION_HEADER" ]; then
+				@echo Unrecognized compression header $COMPRESSION_HEADER will be ignored! >&2
+			fi
 		else
 			COMP=""
 		fi
@@ -166,17 +176,11 @@ fi
 if [ "$(echo $FWOUT | grep -i 'buffalo')" != "" ]
 then	
 	# product name, version, key, encryption type can be specified here
-	$KEY="" # specify full param, e.g. -k mykey
-	$MAGIC=""
-	$PRODUCT=""
-	$LONGSTATE=""
+	KEY="" # specify full param, e.g. -k mykey
+	MAGIC=""
+	PRODUCT=""
+	LONGSTATE=""
 	./src/firmware-tools/buffalo-enc -i $FWOUT -o $FWOUT.buffalo.enc $KEY $MAGIC $PRODUCT $LONGSTATE
-	#if [ $? -eq 0 ]
-	#then
-	#	echo "Encrypted Buffalo image created."
-	#else
-	#	echo "ERROR creating an encrypted Buffalo image"
-	#fi
 fi
 
 echo "New firmware image has been saved to: $FWOUT"

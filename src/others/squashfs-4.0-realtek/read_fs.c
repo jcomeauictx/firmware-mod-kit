@@ -32,6 +32,7 @@ extern unsigned int get_guid(unsigned int);
 #define FALSE 0
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>

@@ -21,6 +21,7 @@ AIRLINK AR525W firmware image structure
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <netinet/in.h>

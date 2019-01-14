@@ -112,6 +112,9 @@ for LINE in IFS='
 			ENDIANESS="-le"
 		fi
 
+		# Get version number
+		FS_VERSION=$(echo ${LINE} | sed -n 's/^.* version \([^,]\+\),.*$/\1/p')
+
 		# Check for LZMA compression in the file system. If not present, assume gzip.
 		# This is only used for squashfs 4.0 images.
 		if [ "$(echo ${LINE} | grep -i 'lzma')" != "" ]
@@ -196,6 +199,8 @@ echo "FS_OFFSET='${FS_OFFSET}'" >> ${CONFLOG}
 echo "FS_COMPRESSION='${FS_COMPRESSION}'" >> ${CONFLOG}
 echo "FS_BLOCKSIZE='${FS_BLOCKSIZE}'" >> ${CONFLOG}
 echo "ENDIANESS='${ENDIANESS}'" >> ${CONFLOG}
+echo "FS_VERSION='${FS_VERSION}'">> ${CONFLOG}
+echo "COMPRESSION_HEADER='${COMPRESSION_HEADER}'" >> ${CONFLOG}
 
 # Extract the file system and save the MKFS variable to the CONFLOG
 case ${FS_TYPE} in
