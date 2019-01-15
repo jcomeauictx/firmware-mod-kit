@@ -33,28 +33,6 @@ TIMEOUT="15"
 MKFS=""
 DEST=""
 
-function wait_for_complete()
-{
-	I=0
-	PNAME="$1"
-
-	while [ $I -lt $TIMEOUT ]
-	do
-		sleep 1
-
-		if [ "$(pgrep $PNAME)" == "" ]
-		then
-			break
-		fi
-
-		((I=$I+1))
-	done
-
-	if [ "$I" == "$TIMEOUT" ]
-	then
-		kill -9 $(pgrep $PNAME) 2>/dev/null
-	fi
-}
 
 if [ "$IMG" == "" ] || [ "$IMG" == "-h" ]
 then
@@ -101,9 +79,7 @@ do
 	then
 		echo -ne "\nTrying $unsquashfs... "
 
-		$unsquashfs $DEST $IMG 2>/dev/null &
-		#sleep $TIMEOUT && kill $! 1>&2 >/dev/null
-		wait_for_complete $unsquashfs
+		timeout -k 5 $TIMEOUT $unsquashfs $DEST $IMG 2>/dev/null
 
 		if [ -d "$DIR" ]
 		then
@@ -132,9 +108,7 @@ do
 	then
 		echo -ne "\nTrying $unsquashfs-lzma... "
 
-		$unsquashfs-lzma $DEST $IMG 2>/dev/null &
-		#sleep $TIMEOUT && kill $! 1>&2 >/dev/null
-		wait_for_complete $unsquashfs-lzma
+		timeout -k 5 $TIMEOUT $unsquashfs-lzma $DEST $IMG 2>/dev/null
 		
 		if [ -d "$DIR" ]
                 then
