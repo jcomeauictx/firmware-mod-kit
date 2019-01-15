@@ -8,7 +8,7 @@ if [ "${DIR}" = "" ]
 	DIR="fmk"
 fi
 
-# Need to extract file systems as ROOT
+# Need to extract file systems as ROOT (not necessarily)
 if [ "$(id -ru)" != "0" ]
  then
 	SUDO="sudo"
@@ -206,11 +206,11 @@ echo "COMPRESSION_HEADER='${COMPRESSION_HEADER}'" >> ${CONFLOG}
 case ${FS_TYPE} in
 	"squashfs")
 		echo "Extracting squashfs files..."
-		${SUDO} ./unsquashfs_all.sh "${FSIMG}" "${ROOTFS}" 2>/dev/null | grep MKFS >> "${CONFLOG}"
+		./unsquashfs_all.sh "${FSIMG}" "${ROOTFS}" 2>/dev/null | grep MKFS >> "${CONFLOG}"
 		;;
 	"cramfs")
 		echo "Extracting CramFS file system..."
-		${SUDO} ./uncramfs_all.sh "${FSIMG}" "${ROOTFS}" ${ENDIANESS} 2>/dev/null | grep MKFS >> "${CONFLOG}"
+		./uncramfs_all.sh "${FSIMG}" "${ROOTFS}" ${ENDIANESS} 2>/dev/null | grep MKFS >> "${CONFLOG}"
 		;;
 	*)
 		echo "Unsupported file system '${FS_TYPE}'! Quitting..."
