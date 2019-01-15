@@ -118,7 +118,7 @@ for LINE in IFS='
 		# binwalk of version 4.0 squashfs should show compression.
 		# assume lzma by default
 		FS_COMPRESSION=$(echo ${LINE} | sed -n 's/^.* compression: \([^,]\+\),.*$/\1/p')
-		${FS_COMPRESSION:=lzma}
+		FS_COMPRESSION=${FS_COMPRESSION:-lzma}
 
 		# Check for a block size (used only by mksquashfs)
 		if [ "$(echo ${LINE} | grep -i 'blocksize')" != "" ]
