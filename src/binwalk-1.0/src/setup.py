@@ -25,5 +25,5 @@ setup(	name = "binwalk",
 	
 	packages = ["binwalk"],
 	package_data = {"binwalk" : install_data_files},
-	scripts = ["bin/binwalk"],
+	scripts = ["scripts/binwalk"],
 )

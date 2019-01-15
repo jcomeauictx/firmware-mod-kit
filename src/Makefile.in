@@ -54,7 +54,9 @@ clean:
 	make -C ./others clean
 	make -C ./crcalc clean
 	make -C ./webcomp-tools clean
-	make -C ./binwalk*/src/ cleanall
+	# binwalk-0.4.1 cleanall target removes Makefile itself
+	-make -C ./binwalk-0.4.1/src cleanall
+	make -C ./binwalk-1.0/src cleanall
 	make -C ./firmware-tools/ clean
 	make -C ./bff/ clean
 
