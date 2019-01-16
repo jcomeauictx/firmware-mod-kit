@@ -285,10 +285,15 @@ unsigned int mangle(char *d, char *s, int size, int block_size, int uncompressed
 
 unsigned int mangle2(char *d, char *s, int size, int block_size, int uncompressed, int data_block)
 {
-	char zipheader[] = "7zip";
-	d = memcpy(d, &zipheader, sizeof(zipheader) - 1);
-	d += sizeof(zipheader) - 1;
-	return mangle(d, s, size, block_size, uncompressed, data_block);
+	unsigned int retval;
+	int skip = SQUASHFS_COMPRESSION_HEADER_LENGTH;
+	strncpy(d, SQUASHFS_COMPRESSION_HEADER, skip);
+	retval = mangle(d + skip, s, size - skip, block_size, uncompressed, data_block);
+	if (retval & (SQUASHFS_COMPRESSED_BIT_BLOCK | SQUASHFS_COMPRESSED_BIT)) {
+		/* data was not compressed, overwrite '7zip' header */
+		memcpy(d, s, size);
+	}
+	return retval;
 }
 
 unsigned int (*morph)(char *, char *, int, int, int, int) = &mangle;

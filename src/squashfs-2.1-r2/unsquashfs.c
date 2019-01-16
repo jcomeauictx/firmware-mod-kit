@@ -86,6 +86,7 @@ char *data;
 unsigned int block_size;
 int lsonly = FALSE, info = FALSE;
 char **created_inode;
+int skipped = 0;  // '7zip' headers skipped
 
 #define CALCULATE_HASH(start)	(start & 0xffff)
 
@@ -140,6 +141,14 @@ int read_bytes(long long byte, int bytes, char *buff)
 	return TRUE;
 }
 
+int skip_compression_header(char *data) {
+	int skip = 0;
+	if (strncmp(data, SQUASHFS_COMPRESSION_HEADER, SQUASHFS_COMPRESSION_HEADER_LENGTH) == 0) {
+		skipped++;
+		skip = SQUASHFS_COMPRESSION_HEADER_LENGTH;
+	}
+	return skip;
+}
 
 int read_block(long long start, long long *next, char *block, squashfs_super_block *sBlk)
 {
@@ -163,12 +172,14 @@ int read_block(long long start, long long *next, char *block, squashfs_super_blo
 		char buffer[SQUASHFS_METADATA_SIZE];
 		int res;
 		unsigned long bytes = SQUASHFS_METADATA_SIZE;
+		int skip = 0;
 
 		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
 		if(read_bytes(start + offset, c_byte, buffer) == FALSE)
 			goto failed;
 
-		if((res = uncompress((unsigned char *) block, &bytes, (const unsigned char *) buffer, c_byte)) != Z_OK) {
+		skip = skip_compression_header(buffer);
+		if((res = uncompress((unsigned char *) block, &bytes, (const unsigned char *) buffer + skip, c_byte - skip)) != Z_OK) {
 			if(res == Z_MEM_ERROR)
 				ERROR("zlib::uncompress failed, not enough memory\n");
 			else if(res == Z_BUF_ERROR)
@@ -199,6 +210,7 @@ int read_data_block(long long start, unsigned int size, char *block)
 	int res;
 	unsigned long bytes = block_size;
 	int c_byte = SQUASHFS_COMPRESSED_SIZE_BLOCK(size);
+	int skip = 0;
 
 	TRACE("read_data_block: block @0x%llx, %d %s bytes\n", start, SQUASHFS_COMPRESSED_SIZE_BLOCK(c_byte), SQUASHFS_COMPRESSED_BLOCK(c_byte) ? "compressed" : "uncompressed");
 
@@ -206,7 +218,8 @@ int read_data_block(long long start, unsigned int size, char *block)
 		if(read_bytes(start, c_byte, data) == FALSE)
 			return 0;
 
-		if((res = uncompress((unsigned char *) block, &bytes, (const unsigned char *) data, c_byte)) != Z_OK) {
+		skip = skip_compression_header(data);
+		if((res = uncompress((unsigned char *) block, &bytes, (const unsigned char *) data + skip, c_byte - skip)) != Z_OK) {
 			if(res == Z_MEM_ERROR)
 				ERROR("zlib::uncompress failed, not enough memory\n");
 			else if(res == Z_BUF_ERROR)
@@ -949,6 +962,7 @@ options:
 		printf("created %d symlinks\n", sym_count);
 		printf("created %d devices\n", dev_count);
 		printf("created %d fifos\n", fifo_count);
+		printf("skipped %d '%s' headers\n", skipped, SQUASHFS_COMPRESSION_HEADER);
 	}
 
 	if(file_count > 0)
