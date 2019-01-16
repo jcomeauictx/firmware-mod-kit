@@ -196,13 +196,12 @@ echo "FS_COMPRESSION='${FS_COMPRESSION}'" >> ${CONFLOG}
 echo "FS_BLOCKSIZE='${FS_BLOCKSIZE}'" >> ${CONFLOG}
 echo "ENDIANESS='${ENDIANESS}'" >> ${CONFLOG}
 echo "FS_VERSION='${FS_VERSION}'">> ${CONFLOG}
-echo "COMPRESSION_HEADER='${COMPRESSION_HEADER}'" >> ${CONFLOG}
 
 # Extract the file system and save the MKFS variable to the CONFLOG
 case ${FS_TYPE} in
 	"squashfs")
 		echo "Extracting squashfs files..."
-		./unsquashfs_all.sh "${FSIMG}" "${ROOTFS}" 2>/dev/null | grep MKFS >> "${CONFLOG}"
+		./unsquashfs_all.sh "${FSIMG}" "${ROOTFS}" 2>/dev/null | sed -n -e "/^MKFS=.*/p" -e "s/^skipped [0-9]\+ \('[^']\+'\) headers/COMPRESSION_HEADER=\1/p" >> "${CONFLOG}"
 		;;
 	"cramfs")
 		echo "Extracting CramFS file system..."
