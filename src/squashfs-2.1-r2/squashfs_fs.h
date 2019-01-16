@@ -83,7 +83,7 @@
 
 /* Kludge some programmers used to indicate 7zip compression */
 #define SQUASHFS_COMPRESSION_HEADER	"7zip"
-#define SQUASHFS_COMPRESSION_HEADER_LENGTH sizeof(SQUASHFS_COMPRESSION_HEADER) - 1
+#define SQUASHFS_COMPRESSION_HEADER_LENGTH (sizeof(SQUASHFS_COMPRESSION_HEADER) - 1)
 
 /* Flag whether block is compressed or uncompressed, bit is set if block is uncompressed */
 #define SQUASHFS_COMPRESSED_BIT		(1 << 15)

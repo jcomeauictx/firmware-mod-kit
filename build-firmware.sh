@@ -104,7 +104,7 @@ case $FS_TYPE in
 			@echo Unrecognized compression header $COMPRESSION_HEADER will be ignored! >&2
 		fi
 
-		$SUDO $MKFS "$ROOTFS" "$FSOUT" $ENDIANESS $BS $COMP -all-root
+		$MKFS "$ROOTFS" "$FSOUT" $ENDIANESS $BS $COMP -all-root
 		;;
 	"cramfs")
 		$SUDO $MKFS "$ROOTFS" "$FSOUT"
