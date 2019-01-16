@@ -201,7 +201,7 @@ echo "FS_VERSION='${FS_VERSION}'">> ${CONFLOG}
 case ${FS_TYPE} in
 	"squashfs")
 		echo "Extracting squashfs files..."
-		./unsquashfs_all.sh "${FSIMG}" "${ROOTFS}" 2>/dev/null | sed -n -e "/^MKFS=.*/p" -e "s/^skipped [0-9]\+ \('[^']\+'\) headers/COMPRESSION_HEADER=\1/p" >> "${CONFLOG}"
+		./unsquashfs_all.sh "${FSIMG}" "${ROOTFS}" 2>/dev/null | sed -n -e "/^MKFS=.*/p" -e "s/^skipped [1-9][0-9]* \('[^']\+'\) headers/COMPRESSION_HEADER=\1/p" >> "${CONFLOG}"
 		;;
 	"cramfs")
 		echo "Extracting CramFS file system..."

@@ -962,7 +962,7 @@ options:
 		printf("created %d symlinks\n", sym_count);
 		printf("created %d devices\n", dev_count);
 		printf("created %d fifos\n", fifo_count);
-		printf("skipped %d '%s' headers\n", skipped, SQUASHFS_COMPRESSION_HEADER);
+		if (skipped) printf("skipped %d '%s' headers\n", skipped, SQUASHFS_COMPRESSION_HEADER);
 	}
 
 	if(file_count > 0)
